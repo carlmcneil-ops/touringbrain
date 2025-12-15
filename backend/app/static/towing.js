@@ -582,10 +582,13 @@ function updateRigVisual(params) {
   rigImage.src = rigImagePath(family, axleSuffix, orientationSuffix);
 
   rigImage.onerror = () => {
-    if (family === "defender" && axleSuffix === "single-rig" && orientationSuffix === "nose-level") {
-      rigImage.src = `/static/images/defender-single-rig-nose-evel.png`;
-    }
-  };
+  // Only try ONE fallback, then give up quietly.
+  if (rigImage.dataset.fallbackTried === "1") return;
+  rigImage.dataset.fallbackTried = "1";
+
+  // If the intended file doesn't exist, fall back to the safe ghost image.
+  rigImage.src = rigImagePath("defender", "twin-rig", "nose-level");
+};
 
   const keyColour = (riskColour || "").toLowerCase();
   if (keyColour === "green") rigCard.style.borderColor = "rgba(16,185,129,0.9)";
