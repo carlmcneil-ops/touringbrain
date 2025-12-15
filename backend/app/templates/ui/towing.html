@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Touring Brain – Towing Check</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="/static/towing.js"></script>
+</head>
+<body class="tb-body">
+  <header class="tb-header">
+    <h1>Touring Brain</h1>
+    <p class="tb-tagline">
+      Weather-smart towing and touring guidance for NZ caravans and campervans.
+    </p>
+  </header>
+
+  <main class="tb-main">
+    <!-- Tabs – Towing active -->
+    <nav class="tb-nav">
+      <a href="/ui" class="tb-tab">Home</a>
+      <a href="/ui/towing" class="tb-tab tb-tab-active">Towing &amp; loading</a>
+      <a href="/ui/touring" class="tb-tab">Touring mode</a>
+      <a href="/ui/briefing" class="tb-tab">Weather briefing</a>
+    </nav>
+
+    <!-- Your towing setup card -->
+    <section class="tb-card">
+      <h2>Your towing setup</h2>
+
+      <form id="towing-form" class="tb-form">
+        <!-- Vehicle block -->
+        <div class="tb-form-section">
+          <h3>Tow vehicle</h3>
+
+          <div class="tb-field-row">
+            <div class="tb-field">
+              <label for="vehicle_label">Vehicle label</label>
+              <input
+                type="text"
+                id="vehicle_label"
+                name="vehicle_label"
+                placeholder="e.g. 2022 Kia Sportage diesel AWD"
+              >
+              <p class="tb-helper-text">
+                Just something meaningful for you – appears in the summary.
+              </p>
+            </div>
+
+            <div class="tb-field">
+              <label for="vehicle_preset">Vehicle preset (optional)</label>
+              <select id="vehicle_preset" name="vehicle_preset">
+                <option value="">— Choose a common NZ tow vehicle —</option>
+                <optgroup label="Utes">
+                  <option value="ford_ranger">Ford Ranger (3.5 t)</option>
+                  <option value="toyota_hilux">Toyota Hilux (3.5 t)</option>
+                  <option value="mitsubishi_triton">Mitsubishi Triton</option>
+                  <option value="nissan_navara">Nissan Navara</option>
+                  <option value="isuzu_dmax">Isuzu D-MAX</option>
+                  <option value="mazda_bt50">Mazda BT-50</option>
+                  <option value="vw_amarok">VW Amarok</option>
+                  <option value="byd_shark">BYD Shark</option>
+                </optgroup>
+                <optgroup label="Big wagons">
+                  <option value="landcruiser_200_300">Land Cruiser 200/300</option>
+                  <option value="prado">Land Cruiser Prado</option>
+                  <option value="discovery_5">Discovery 5</option>
+                  <option value="defender_110">Defender 110</option>
+                  <option value="range_rover">Range Rover</option>
+                  <option value="ford_everest">Ford Everest</option>
+                </optgroup>
+                <optgroup label="SUVs">
+                  <option value="rav4">Toyota RAV4</option>
+                  <option value="outlander">Mitsubishi Outlander</option>
+                  <option value="sportage_diesel">Kia Sportage diesel</option>
+                  <option value="cx5">Mazda CX-5</option>
+                  <option value="tucson">Hyundai Tucson</option>
+                  <option value="seltos">Kia Seltos</option>
+                  <option value="xtrail">Nissan X-Trail</option>
+                  <option value="forester">Subaru Forester</option>
+                  <option value="medium_suv_generic">Generic medium SUV</option>
+                </optgroup>
+              </select>
+              <p id="vehicle-preset-hint" class="tb-helper-text tb-helper-muted"></p>
+            </div>
+          </div>
+
+          <div class="tb-field-row">
+            <div class="tb-field">
+              <label for="tow_rating">Tow rating (braked, kg)</label>
+              <input
+                type="number"
+                id="tow_rating"
+                name="tow_rating"
+                min="0"
+                step="10"
+                placeholder="e.g. 1900"
+              >
+              <p class="tb-helper-text">
+                Max braked tow rating from your handbook / plate.
+              </p>
+            </div>
+
+            <div class="tb-field">
+              <label for="ball_limit">Ball weight limit (kg)</label>
+              <input
+                type="number"
+                id="ball_limit"
+                name="ball_limit"
+                min="0"
+                step="1"
+                placeholder="e.g. 100"
+              >
+              <p class="tb-helper-text">
+                Often 5–10% of tow rating. Check the vehicle placard.
+              </p>
+            </div>
+          </div>
+
+          <!-- Towbar type -->
+          <div class="tb-field">
+  <label for="towbar_type">
+    Towbar type <span class="tb-required">*</span>
+  </label>
+  <select id="towbar_type" name="towbar_type" required>
+    <option value="" selected disabled>Choose towbar type…</option>
+    <option value="fixed">Fixed / heavy-duty tongue</option>
+    <option value="detachable">Detachable / swan-neck style</option>
+    <option value="not_sure">Not sure</option>
+  </select>
+  <p class="tb-helper-text">
+    Detachable systems are often de-rated for vertical (ball) load.
+    Always check the towbar plate and fitting instructions, not just the handbook.
+  </p>
+</div>
+          </div>
+        </div>
+
+        <!-- Caravan block -->
+        <div class="tb-form-section">
+          <h3>Caravan – plate weights</h3>
+
+          <div class="tb-field-row">
+            <div class="tb-field">
+              <label for="caravan_label">Caravan label</label>
+              <input
+                type="text"
+                id="caravan_label"
+                name="caravan_label"
+                placeholder="e.g. 2023 Jayco Journey 19.61-3"
+              >
+            </div>
+          </div>
+
+          <div class="tb-field-row">
+            <div class="tb-field">
+              <label for="caravan_tare">Tare (kg)</label>
+              <input
+                type="number"
+                id="caravan_tare"
+                name="caravan_tare"
+                min="0"
+                step="10"
+                placeholder="e.g. 2300"
+              >
+              <p class="tb-helper-text">
+                From the caravan plate – empty weight as built.
+              </p>
+            </div>
+
+            <div class="tb-field">
+              <label for="caravan_atm">ATM (kg)</label>
+              <input
+                type="number"
+                id="caravan_atm"
+                name="caravan_atm"
+                min="0"
+                step="10"
+                placeholder="e.g. 2800"
+              >
+              <p class="tb-helper-text">
+                Aggregate Trailer Mass – max allowed fully loaded, on the plate.
+              </p>
+            </div>
+          </div>
+
+          <div class="tb-field-row">
+            <div class="tb-field">
+  <label for="axle_config">
+    Axle configuration <span class="tb-required">*</span>
+  </label>
+  <select id="axle_config" name="axle_config" required>
+    <option value="" selected disabled>Choose axle setup…</option>
+    <option value="single">Single axle</option>
+    <option value="tandem">Tandem / dual axle</option>
+  </select>
+  <p class="tb-helper-text">
+    Single axle vans are usually more sensitive to heavy loads on the drawbar or hanging off the back.
+  </p>
+</div>
+          </div>
+
+          <!-- Caravan length -->
+          <div class="tb-field-row">
+            <div class="tb-field">
+              <label for="caravan_length_m">Caravan length (overall, ft)</label>
+              <input
+                type="number"
+                id="caravan_length_m"
+                name="caravan_length_m"
+                min="10"
+                max="30"
+                step="0.5"
+                placeholder="e.g. 22"
+              >
+              <p class="tb-helper-text">
+                Rough guide: 19–20 ft vans are usually around 6.0–6.5 m overall.
+                Longer vans put more leverage on the towbar.
+              </p>
+            </div>
+          </div>
+
+          <div class="tb-field-row">
+            <div class="tb-field">
+              <label for="caravan_loaded">Loaded travel weight (kg)</label>
+              <input
+                type="number"
+                id="caravan_loaded"
+                name="caravan_loaded"
+                min="0"
+                step="10"
+                placeholder="e.g. 2600"
+              >
+              <p class="tb-helper-text">
+                Your best estimate (or weighbridge figure) for how your caravan actually tows –
+                <strong>including all gear</strong>, water, bikes, boxes, food, etc.
+              </p>
+            </div>
+
+            <div class="tb-field">
+              <label for="caravan_ball">
+                Measured ball weight (kg)
+                <span class="tb-helper-text-inline">(if known)</span>
+              </label>
+              <input
+                type="number"
+                id="caravan_ball"
+                name="caravan_ball"
+                min="0"
+                step="1"
+                placeholder="e.g. 260"
+              >
+              <p class="tb-helper-text">
+                From a ball weight scale / jockey wheel scale when fully loaded.
+                Optional – leave blank if you don't have it.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Load distribution -->
+        <div class="tb-form-section">
+          <h3>Load distribution – front / rear extras</h3>
+          <p class="tb-helper-text">
+            These numbers tell TouringBrain <em>where</em> your gear is, not add more weight.
+            They should be slices of your loaded weight, not additional mass.
+          </p>
+
+          <div class="tb-field-row">
+            <!-- FRONT EXTRA -->
+            <div class="tb-field">
+              <label for="front_extra_kg">Approx. weight on the front (kg)</label>
+              <input
+                type="number"
+                id="front_extra_kg"
+                name="front_extra_kg"
+                min="0"
+                step="1"
+                placeholder="e.g. 60"
+              >
+              <p class="tb-helper-text">
+                Of your <strong>total loaded weight above</strong>, how much do you reckon is sitting
+                forward of the axle – A-frame toolboxes, gas bottles, generators, bikes on the drawbar,
+                front storage, etc. This is <strong>part of your loaded weight</strong>, not extra on top.
+              </p>
+            </div>
+
+            <!-- REAR EXTRA WITH GAUGE + PILL -->
+            <div class="tb-field">
+              <label for="rear_extra_kg">Approx. weight hanging off the rear (kg)</label>
+              <input
+                type="number"
+                id="rear_extra_kg"
+                name="rear_extra_kg"
+                min="0"
+                step="1"
+                placeholder="e.g. 54"
+              >
+
+              <!-- Gauge + commentary pill -->
+              <div class="tb-rear-load-wrapper">
+                <div class="tb-rear-gauge">
+                  <div id="rear-gauge-fill" class="tb-rear-gauge-fill"></div>
+                </div>
+
+                <div
+                  id="rear-load-commentary"
+                  class="tb-rear-commentary-pill tb-rear-commentary-pill--ghost"
+                >
+                  Add rear weight and van length to see how twitchy this might get.
+                </div>
+              </div>
+
+              <!-- Single helper line -->
+              <p class="tb-helper-text">
+                Of your <strong>total loaded weight</strong>, how much is hanging behind the axle –
+                rear boxes, racks, bikes, spare carriers, rear tanks, etc. This is
+                <strong>included in your loaded weight</strong>, not added on top.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tb-form-actions">
+          <button type="button" id="towing-submit" class="tb-button-primary">Check my setup</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- RESULT CARD -->
+    <section class="tb-card" id="towing-result-card">
+      <h2>Result</h2>
+
+      <div class="tb-result-header">
+        <span id="towing-status-pill" class="tb-status-pill tb-status-pill--grey">
+          Not checked yet
+        </span>
+        <span id="towing-risk-label" class="tb-risk-label"></span>
+      </div>
+
+      <p id="towing-summary" class="tb-summary-text">
+        Fill in your details and hit “Check my setup” to see a towing sanity check.
+      </p>
+    </section>
+
+    <!-- YOUR RIG CARD -->
+    <section class="tb-card tb-card-rig" id="rig-card">
+      <h2>Your rig (visual)</h2>
+
+      <div class="tb-rig-visual">
+        <img
+          id="rig-image"
+          src="/static/images/defender-rig-level.png"
+          alt="Side view of tow vehicle and caravan"
+          class="tb-rig-image"
+        >
+      </div>
+
+      <p id="rig-caption" class="tb-rig-caption">
+        Once you've added your tow vehicle and caravan details, we'll show your current setup here.
+      </p>
+    </section>
+
+    <!-- CHECKS CARD -->
+    <section class="tb-card">
+      <h2>Checks</h2>
+      <ul id="towing-checks-list" class="tb-checks-list">
+        <!-- Populated by towing.js -->
+      </ul>
+    </section>
+
+    <!-- CARAVAN WEIGHTS CARD -->
+    <section class="tb-card">
+      <h2 id="quick-guide-title">Caravan weights – quick guide</h2>
+
+      <table class="tb-table tb-table-weights">
+        <thead>
+          <tr>
+            <th scope="col">Weight</th>
+            <th scope="col">Your numbers</th>
+            <th scope="col">What it means</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Tare (plate)</th>
+            <td><span id="expl_tare">–</span> kg</td>
+            <td>Empty build weight from the caravan plate.</td>
+          </tr>
+          <tr>
+            <th scope="row">ATM (plate)</th>
+            <td><span id="expl_atm">–</span> kg</td>
+            <td>Maximum allowed fully loaded weight on the plate.</td>
+          </tr>
+          <tr>
+            <th scope="row">Loaded (your estimate)</th>
+            <td><span id="expl_loaded_hint">–</span> kg</td>
+            <td>What you actually travel at – weighbridge or best estimate.</td>
+          </tr>
+          <tr>
+            <th scope="row">Typical ball band</th>
+            <td><span id="expl_ball_band">–</span></td>
+            <td>Rule-of-thumb 8–12% band many NZ rigs aim for.</td>
+          </tr>
+          <tr>
+            <th scope="row">Your ball weight (if known)</th>
+            <td>
+              <span id="expl_ball_pct">–</span>
+            </td>
+            <td>
+              <span id="expl_ball_comment"></span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="tb-disclaimer-strong">
+        <strong>Important:</strong>
+        TouringBrain uses rule-of-thumb guidance for NZ caravans and tow vehicles.
+        It does not replace your vehicle handbook, caravan plate, or professional advice.
+        The lowest rating (vehicle, towbar, hitch, tyres, caravan) always wins.
+        Use a weighbridge to confirm real-world masses. All care, no responsibility.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

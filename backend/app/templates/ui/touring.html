@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Touring Brain – Touring mode</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="/static/touring.js"></script>
+</head>
+<body class="tb-body">
+  <header class="tb-header">
+    <h1>Touring Brain</h1>
+    <p class="tb-tagline">
+      Weather-smart towing and touring guidance for NZ caravans and campervans.
+    </p>
+  </header>
+
+  <main class="tb-main">
+    <!-- Tabs – Touring active -->
+    <nav class="tb-nav">
+      <a href="/ui" class="tb-tab">Home</a>
+      <a href="/ui/towing" class="tb-tab">Towing &amp; loading</a>
+      <a href="/ui/touring" class="tb-tab tb-tab-active">Touring mode</a>
+      <a href="/ui/briefing" class="tb-tab">Weather briefing</a>
+    </nav>
+
+    <section class="tb-card">
+      <h2>Where would you like to go today?</h2>
+
+      <p>
+        This page helps you decide whether to stay where you are, tow to your next stop today,
+        or wait for a better window. Later, this will automatically use your saved rig and locations.
+      </p>
+
+      <form class="tb-form">
+        <div class="tb-form-section">
+          <h3>Where you are now</h3>
+
+          <div class="tb-field-row">
+            <div class="tb-field">
+              <label for="touring_origin">Current location</label>
+              <input
+                type="text"
+                id="touring_origin"
+                name="origin"
+                placeholder="e.g. Wanaka"
+              >
+              <p class="tb-helper-text">
+                We’ll eventually auto-fill this from your last Touring search or your current location.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tb-form-section">
+          <h3>Where you’d like to head</h3>
+
+          <div class="tb-field-row">
+            <div class="tb-field">
+              <label for="touring_destination">Destination</label>
+              <input
+                type="text"
+                id="touring_destination"
+                name="destination"
+                placeholder="e.g. Clyde"
+              >
+              <p class="tb-helper-text">
+                Type the town or general area you’re thinking of towing to.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tb-form-section">
+          <h3>When are you thinking of towing?</h3>
+
+          <div class="tb-field-row">
+            <div class="tb-field">
+              <div>
+                <label>
+                  <input type="radio" name="travel_day" value="today" checked>
+                  Today
+                </label>
+              </div>
+              <div>
+                <label>
+                  <input type="radio" name="travel_day" value="tomorrow">
+                  Tomorrow
+                </label>
+              </div>
+              <div>
+                <label>
+                  <input type="radio" name="travel_day" value="other">
+                  Another day
+                </label>
+              </div>
+              <p class="tb-helper-text">
+                Later on this will drive a proper date picker and detailed towing window logic.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tb-form-actions">
+          <button type="button" class="tb-button-primary">
+            (Coming soon) Compare today vs tomorrow
+          </button>
+        </div>
+      </form>
+
+      <p class="tb-disclaimer-strong">
+        For now this form is just a placeholder. Once wired up, it will call the Touring Brain backend
+        to compare weather and towing comfort between where you are and where you’d like to go.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

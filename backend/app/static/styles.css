@@ -1,0 +1,683 @@
+/* static/styles.css */
+
+/* -------------------------
+   Base + reset
+-------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body.tb-body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top left, #e5f0ff 0, #f3f4f6 40%, #e5e7eb 100%);
+  color: #111827;
+  overflow-x: hidden;
+}
+
+/* Remove number spinners */
+/* Chrome, Safari, Edge, Opera */
+.tb-form input[type="number"]::-webkit-outer-spin-button,
+.tb-form input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+.tb-form input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Fallback focus ring */
+.tb-form input[type="number"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.45);
+}
+
+/* -------------------------
+   Header
+-------------------------- */
+
+.tb-header {
+  background: radial-gradient(circle at top left, #1f2937 0, #020617 55%, #020617 100%);
+  color: #f9fafb;
+  padding: 1.75rem 0 1.4rem;
+}
+
+.tb-header h1 {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+  font-size: 1.55rem;
+  letter-spacing: 0.02em;
+}
+
+.tb-tagline {
+  max-width: 960px;
+  margin: 0.35rem auto 0;
+  padding: 0 1.25rem;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+/* -------------------------
+   Main container
+-------------------------- */
+
+.tb-main {
+  max-width: 960px;
+  margin: 1.5rem auto 2.5rem;
+  padding: 0 1.25rem 3rem;
+}
+
+/* -------------------------
+   Nav tabs
+-------------------------- */
+
+.tb-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.tb-tab {
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  text-decoration: none;
+  color: #374151;
+  background: rgba(249, 250, 251, 0.8);
+  border: 1px solid rgba(209, 213, 219, 0.9);
+  backdrop-filter: blur(10px);
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease,
+    border-color 0.15s ease, transform 0.1s ease;
+}
+
+.tb-tab:hover {
+  background: #e5e7eb;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.15);
+  transform: translateY(-1px);
+}
+
+.tb-tab-active {
+  background: #2563eb;
+  color: #f9fafb;
+  border-color: #1d4ed8;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.5);
+}
+
+/* -------------------------
+   Cards (glass / soft)
+-------------------------- */
+
+.tb-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.25rem;
+  padding: 1.6rem 1.8rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.14),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  margin-bottom: 1.25rem;
+  backdrop-filter: blur(18px);
+  transition: box-shadow 0.18s ease, transform 0.12s ease, border-color 0.18s ease;
+}
+
+.tb-card:hover {
+  box-shadow:
+    0 22px 55px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  transform: translateY(-1px);
+}
+
+.tb-card h2 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1.25rem;
+}
+
+/* -------------------------
+   Form layout (RESTORED: step numbering + section highlight)
+-------------------------- */
+
+.tb-form {
+  counter-reset: tb-section;
+}
+
+.tb-form-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.25rem;
+  margin-top: 1.25rem;
+  position: relative;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.tb-form-section:first-of-type {
+  border-top: none;
+  padding-top: 0.25rem;
+  margin-top: 0;
+}
+
+/* Highlight current section on focus */
+.tb-form-section:focus-within {
+  background: linear-gradient(
+    135deg,
+    rgba(219, 234, 254, 0.45),
+    rgba(239, 246, 255, 0.9)
+  );
+  border-radius: 1rem;
+  border-color: rgba(129, 140, 248, 0.7);
+  box-shadow: 0 10px 30px rgba(30, 64, 175, 0.22);
+  padding: 1.35rem 1rem 1.35rem 1.2rem;
+  margin: 1.25rem -0.1rem 1.1rem;
+}
+
+/* Rear-load UI must NOT inflate when section is focused */
+.tb-form-section:focus-within .tb-rear-load-wrapper {
+  padding: 0;
+  margin: 0;
+}
+
+/* Section headings get step numbers */
+.tb-form-section h3 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1.02rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tb-form-section h3::before {
+  counter-increment: tb-section;
+  content: counter(tb-section);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #111827;
+  background: #e5edff;
+  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.2);
+}
+
+/* Field rows + fields */
+
+.tb-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tb-field {
+  flex: 1 1 min(260px, 100%);
+}
+
+.tb-field label {
+  display: block;
+  font-size: 0.83rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.tb-field input,
+.tb-field select {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.75rem;
+  border: 1px solid #d1d5db;
+  font-size: 0.9rem;
+  outline: none;
+  background-color: rgba(249, 250, 251, 0.9);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    background-color 0.15s ease, transform 0.08s ease;
+}
+
+.tb-field input:focus,
+.tb-field select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+  background-color: #ffffff;
+  transform: translateY(-0.5px);
+}
+
+.tb-helper-text {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.tb-helper-muted {
+  color: #9ca3af;
+}
+
+.tb-helper-text-inline {
+  font-weight: 400;
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.tb-required {
+  color: #b91c1c;
+}
+
+/* -------------------------
+   Buttons
+-------------------------- */
+
+.tb-form-actions {
+  margin-top: 1.25rem;
+}
+
+.tb-button-primary {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 0.65rem 1.7rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #f9fafb;
+  box-shadow: 0 16px 35px rgba(37, 99, 235, 0.55);
+  transition: background 0.18s ease, box-shadow 0.18s ease,
+    transform 0.1s ease, filter 0.1s ease;
+}
+
+.tb-button-primary:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  box-shadow: 0 20px 45px rgba(37, 99, 235, 0.7);
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+}
+
+.tb-button-primary:active {
+  transform: translateY(1px);
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.5);
+}
+
+/* -------------------------
+   Result header / pill
+-------------------------- */
+
+.tb-result-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tb-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.tb-status-pill--grey { background: #e5e7eb; color: #4b5563; }
+.tb-status-pill--green { background: #dcfce7; color: #166534; }
+.tb-status-pill--amber { background: #fef3c7; color: #92400e; }
+.tb-status-pill--red { background: #fee2e2; color: #b91c1c; }
+
+.tb-risk-label {
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.tb-summary-text {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #111827;
+}
+
+/* -------------------------
+   Rig card highlight + containment
+-------------------------- */
+
+.tb-card-rig {
+  position: relative;
+  background: linear-gradient(
+      145deg,
+      rgba(243, 244, 246, 0.9),
+      rgba(255, 255, 255, 0.98)
+    );
+  border-radius: 1.25rem;
+  padding: 1.8rem 1.9rem;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+}
+
+.tb-rig-visual {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 0.9rem;
+  background: rgba(243, 244, 246, 0.7);
+  border: 1px solid rgba(209, 213, 219, 0.9);
+  padding: 0.75rem;
+}
+
+.tb-rig-image {
+  width: 100%;
+  max-width: 820px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  border-radius: 0.75rem;
+}
+
+.tb-rig-caption {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+#rig-danger-badge {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 900;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+}
+
+/* -------------------------
+   Checks list
+-------------------------- */
+
+.tb-checks-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tb-check-item {
+  border-radius: 0.9rem;
+  padding: 0.8rem 0.8rem 0.7rem;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 0.7rem;
+  background: #f9fafb;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    transform 0.1s ease, background 0.15s ease;
+}
+
+.tb-check-item:hover {
+  border-color: rgba(148, 163, 184, 0.7);
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+.tb-check-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tb-check-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.tb-check-detail {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+/* Check badges */
+
+.tb-check-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tb-check-status--ok { background-color: #dcfce7; color: #166534; }
+.tb-check-status--amber { background-color: #fef3c7; color: #92400e; }
+.tb-check-status--red { background-color: #fee2e2; color: #b91c1c; }
+.tb-check-status--unknown { background-color: #e5e7eb; color: #4b5563; }
+
+/* -------------------------
+   Disclaimer
+-------------------------- */
+
+.tb-disclaimer-strong {
+  margin-top: 0.9rem;
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+.tb-disclaimer-strong strong {
+  font-weight: 900;
+}
+
+/* -------------------------
+   Responsive tweaks
+-------------------------- */
+
+@media (max-width: 640px) {
+  .tb-card { padding: 1.25rem 1.1rem; }
+
+  .tb-form-section:focus-within {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+  }
+
+  .tb-field-row { flex-direction: column; }
+  .tb-nav { flex-wrap: wrap; }
+}
+/* -------------------------
+   Weights quick guide table
+-------------------------- */
+
+.tb-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 0.75rem;
+  border: 1px solid rgba(209, 213, 219, 0.9);
+  border-radius: 0.9rem;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.tb-table th,
+.tb-table td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
+}
+
+.tb-table thead th {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #111827;
+  background: rgba(243, 244, 246, 0.9);
+}
+
+.tb-table tbody th {
+  font-weight: 800;
+  color: #111827;
+  width: 28%;
+}
+
+.tb-table tbody td:nth-child(2) {
+  width: 18%;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.tb-table tbody td:nth-child(3) {
+  width: 54%;
+  color: #374151;
+}
+
+.tb-table tbody tr:nth-child(odd) {
+  background: #ffffff;
+}
+
+.tb-table tbody tr:nth-child(even) {
+  background: rgba(243, 244, 246, 0.65);
+}
+
+.tb-table tbody tr:last-child th,
+.tb-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Force Result summary sizing (override anything else) */
+#towing-summary {
+  font-size: 0.8rem !important;
+  line-height: 1.35;
+}
+
+.tb-rear-gauge {
+  flex: 0 0 110px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(229, 231, 235, 1);
+  overflow: hidden;
+  border: 1px solid rgba(209, 213, 219, 0.9);
+}
+
+.tb-rear-gauge-fill {
+  height: 100%;
+  width: 0%;
+}
+
+.tb-rear-commentary-pill {
+  flex: 1 1 auto;
+  padding: 0.4rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  color: #374151;
+  background: rgba(243, 244, 246, 0.85);
+  border: 1px solid rgba(209, 213, 219, 0.9);
+}
+
+.tb-rear-commentary-pill--ghost {
+  color: #6b7280;
+  background: rgba(249, 250, 251, 0.9);
+}
+/* Rear-load gauge + commentary (STACKED) */
+.tb-rear-load-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.tb-rear-gauge {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(229, 231, 235, 1);
+  overflow: hidden;
+  border: 1px solid rgba(209, 213, 219, 0.9);
+}
+
+.tb-rear-gauge-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.tb-rear-commentary-pill {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  border: 1px solid rgba(209, 213, 219, 0.9);
+}
+
+.tb-rear-commentary-pill--ghost {
+  color: #6b7280;
+  background: rgba(249, 250, 251, 0.9);
+}
+
+.tb-rear-commentary-pill--ok {
+  color: #166534;
+  background: #dcfce7;
+  border-color: rgba(22, 101, 52, 0.25);
+}
+
+.tb-rear-commentary-pill--amber {
+  color: #92400e;
+  background: #fef3c7;
+  border-color: rgba(146, 64, 14, 0.25);
+}
+
+.tb-rear-commentary-pill--red {
+  color: #b91c1c;
+  background: #fee2e2;
+  border-color: rgba(185, 28, 28, 0.25);
+}
+
+
+.tb-rear-gauge-fill {
+  height: 100%;
+  display: block;
+}
+/* Rear-load gauge: force a thin bar (no !important, just higher specificity) */
+.tb-rear-load-wrapper .tb-rear-gauge {
+  height: 10px;
+  min-height: 10px;
+  max-height: 10px;
+  padding: 0;
+  margin: 0;
+  display: block;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(229, 231, 235, 1);
+  border: 1px solid rgba(209, 213, 219, 0.9);
+}
+
+.tb-rear-load-wrapper .tb-rear-gauge-fill {
+  height: 100%;
+  width: 0%;
+  display: block;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}

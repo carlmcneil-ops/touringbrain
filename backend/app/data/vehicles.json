@@ -1,0 +1,79 @@
+{
+  "vehicles": [
+    {
+      "id": "kia_sportage_2022_diesel_nz",
+      "make": "Kia",
+      "model": "Sportage",
+      "year_range": "2021-2023",
+      "variant": "2.0 diesel AWD (example only)",
+      "country_region": "NZ/AU",
+      "braked_tow_capacity_kg": 1900,
+      "unbraked_tow_capacity_kg": 750,
+      "max_ball_weight_kg": 100,
+      "gvm_kg": null,
+      "gcm_kg": null,
+      "confidence": "medium",
+      "notes": "Example figures only. Check your VIN plate, handbook, and NZTA info before towing."
+    },
+    {
+      "id": "toyota_hilux_2020_diesel_4x4_nz",
+      "make": "Toyota",
+      "model": "Hilux",
+      "year_range": "2016-2023",
+      "variant": "3.0–2.8 diesel 4x4 (typical NZ spec, example only)",
+      "country_region": "NZ/AU",
+      "braked_tow_capacity_kg": 3500,
+      "unbraked_tow_capacity_kg": 750,
+      "max_ball_weight_kg": 350,
+      "gvm_kg": null,
+      "gcm_kg": null,
+      "confidence": "medium",
+      "notes": "Typical NZ/AU dual-cab ute numbers, but will vary by exact model and year. Always confirm on the compliance plate."
+    },
+    {
+      "id": "ford_ranger_2022_diesel_4x4_nz",
+      "make": "Ford",
+      "model": "Ranger",
+      "year_range": "2019-2024",
+      "variant": "Diesel 4x4 (example only)",
+      "country_region": "NZ/AU",
+      "braked_tow_capacity_kg": 3500,
+      "unbraked_tow_capacity_kg": 750,
+      "max_ball_weight_kg": 350,
+      "gvm_kg": null,
+      "gcm_kg": null,
+      "confidence": "medium",
+      "notes": "These are generic guide numbers only. Check compliance plate and handbook for your exact truck."
+    },
+    {
+      "id": "isuzu_dmax_2022_diesel_4x4_nz",
+      "make": "Isuzu",
+      "model": "D-MAX",
+      "year_range": "2020-2024",
+      "variant": "3.0 diesel 4x4 (example only)",
+      "country_region": "NZ/AU",
+      "braked_tow_capacity_kg": 3500,
+      "unbraked_tow_capacity_kg": 750,
+      "max_ball_weight_kg": 350,
+      "gvm_kg": null,
+      "gcm_kg": null,
+      "confidence": "medium",
+      "notes": "Common tow vehicle in NZ and Aus. Use as a rough guide only – confirm your exact model."
+    },
+    {
+      "id": "generic_medium_suv_diesel_nz",
+      "make": "Generic",
+      "model": "Medium SUV Diesel",
+      "year_range": "2015-2025",
+      "variant": "Typical 2.0–2.5L diesel SUV",
+      "country_region": "NZ/AU",
+      "braked_tow_capacity_kg": 2000,
+      "unbraked_tow_capacity_kg": 750,
+      "max_ball_weight_kg": 150,
+      "gvm_kg": null,
+      "gcm_kg": null,
+      "confidence": "low",
+      "notes": "Generic template for medium diesel SUVs sold in NZ/AU. Use ONLY as a rough starting point. Always check the actual plate and handbook."
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Touring Brain – Weather briefing</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="tb-body">
+  <header class="tb-header">
+    <h1>Touring Brain</h1>
+    <p class="tb-tagline">
+      Weather-smart towing and touring guidance for NZ caravans and campervans.
+    </p>
+  </header>
+
+  <main class="tb-main">
+    <!-- Tabs – Weather briefing active -->
+    <nav class="tb-nav">
+      <a href="/ui" class="tb-tab">Home</a>
+      <a href="/ui/towing" class="tb-tab">Towing &amp; loading</a>
+      <a href="/ui/touring" class="tb-tab">Touring mode</a>
+      <a href="/ui/briefing" class="tb-tab tb-tab-active">Weather briefing</a>
+    </nav>
+
+    <section class="tb-card">
+      <h2>Next 3 days where you are</h2>
+
+      <p>
+        A simple 3-day outlook for your current location. Later, this will auto-use where you’re
+        actually camped (or last used in Touring mode).
+      </p>
+
+      <h3>Today</h3>
+      <p>Wind, rain and temperature summary.</p>
+      <ul>
+        <li>Wind: placeholder</li>
+        <li>Rain: placeholder</li>
+        <li>Comfort: placeholder</li>
+      </ul>
+
+      <h3>Tomorrow</h3>
+      <p>Towing comfort and overnight comfort.</p>
+      <ul>
+        <li>Towing window: placeholder</li>
+        <li>Overnight: placeholder</li>
+        <li>Comfort: placeholder</li>
+      </ul>
+
+      <h3>Day 3</h3>
+      <p>Any changes on the horizon.</p>
+      <ul>
+        <li>Trend: placeholder</li>
+        <li>Wind/rain: placeholder</li>
+        <li>Comfort: placeholder</li>
+      </ul>
+
+      <p class="tb-disclaimer-strong">
+        For now this view is just a placeholder. Once wired up, it will pull real data from Open-Meteo
+        and Touring Brain’s scoring logic to highlight good and bad towing windows.
+      </p>
+    </section>
+  </main>
+</body>
+</html>
