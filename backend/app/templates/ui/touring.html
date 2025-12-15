@@ -23,16 +23,21 @@
       <a href="/ui/briefing" class="tb-tab">Weather briefing</a>
     </nav>
 
+    <!-- Intro card -->
     <section class="tb-card">
       <h2>Where would you like to go today?</h2>
-
       <p>
         This page helps you decide whether to stay where you are, tow to your next stop today,
         or wait for a better window. Later, this will automatically use your saved rig and locations.
       </p>
+    </section>
 
-      <form class="tb-form">
-        <div class="tb-form-section">
+    <!-- One form wraps all steps so the numbered pills keep working -->
+    <form id="touring_form" class="tb-form tb-form-touring">
+
+      <!-- STEP 1 -->
+      <section class="tb-card">
+        <div class="tb-form-section tb-form-section--nohighlight">
           <h3>Where you are now</h3>
 
           <div class="tb-field-row">
@@ -50,7 +55,10 @@
             </div>
           </div>
         </div>
+      </section>
 
+      <!-- STEP 2 -->
+      <section class="tb-card">
         <div class="tb-form-section">
           <h3>Where you’d like to head</h3>
 
@@ -69,49 +77,99 @@
             </div>
           </div>
         </div>
+      </section>
 
-        <div class="tb-form-section">
+      <!-- STEP 3 (RADIOS: no tb-field-row to avoid weird blue bars) -->
+      <section class="tb-card">
+        <div class="tb-form-section tb-form-section--nohighlight">
           <h3>When are you thinking of towing?</h3>
 
-          <div class="tb-field-row">
-            <div class="tb-field">
-              <div>
-                <label>
-                  <input type="radio" name="travel_day" value="today" checked>
-                  Today
-                </label>
-              </div>
-              <div>
-                <label>
-                  <input type="radio" name="travel_day" value="tomorrow">
-                  Tomorrow
-                </label>
-              </div>
-              <div>
-                <label>
-                  <input type="radio" name="travel_day" value="other">
-                  Another day
-                </label>
-              </div>
-              <p class="tb-helper-text">
-                Later on this will drive a proper date picker and detailed towing window logic.
-              </p>
-            </div>
-          </div>
-        </div>
+          <div class="tb-radio-group">
+            <label class="tb-radio-option">
+              <input type="radio" name="travel_day" value="today" checked>
+              Today
+            </label>
 
+            <label class="tb-radio-option">
+              <input type="radio" name="travel_day" value="tomorrow">
+              Tomorrow
+            </label>
+
+            <label class="tb-radio-option">
+              <input type="radio" name="travel_day" value="other">
+              Another day
+            </label>
+          </div>
+
+          <p class="tb-helper-text">
+            We’ll flag if it’s a go-early or no-go-later kind of day.
+          </p>
+        </div>
+      </section>
+
+      <!-- STEP 4 (RADIOS: same rule) -->
+      <section class="tb-card">
+        <div class="tb-form-section tb-form-section--nohighlight">
+          <h3>How long are you thinking of staying?</h3>
+
+          <div class="tb-radio-group">
+            <label class="tb-radio-option">
+              <input type="radio" name="stay_length" value="overnight">
+              Just overnight
+            </label>
+
+            <label class="tb-radio-option">
+              <input type="radio" name="stay_length" value="1_2_nights">
+              1–2 nights
+            </label>
+
+            <label class="tb-radio-option">
+              <input type="radio" name="stay_length" value="few_days">
+              A few days
+            </label>
+
+            <label class="tb-radio-option">
+              <input type="radio" name="stay_length" value="unsure" checked>
+              Not sure yet
+            </label>
+          </div>
+
+          <p class="tb-helper-text">
+            This helps weigh up whether the weather window at your destination is worth the tow.
+          </p>
+        </div>
+      </section>
+
+      <!-- STEP 5 -->
+      <section class="tb-card">
+        <div class="tb-form-section">
+          <h3>Your touring call</h3>
+
+          <!-- JS renders results into this container -->
+          <div id="touring_result"></div>
+
+          <p class="tb-helper-text">
+            You’ll get a clear GO / WAIT / CONSIDER ALTERNATE call, plus the why, timing,
+            and sensible stop options along the way.
+          </p>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <section class="tb-card">
         <div class="tb-form-actions">
           <button type="button" class="tb-button-primary">
             (Coming soon) Compare today vs tomorrow
           </button>
         </div>
-      </form>
 
-      <p class="tb-disclaimer-strong">
-        For now this form is just a placeholder. Once wired up, it will call the Touring Brain backend
-        to compare weather and towing comfort between where you are and where you’d like to go.
-      </p>
-    </section>
+        <p class="tb-disclaimer-strong">
+          For now this form is just a placeholder. Once wired up, it will call the Touring Brain backend
+          to compare weather and towing comfort between where you are and where you’d like to go.
+        </p>
+      </section>
+
+    </form>
   </main>
 </body>
 </html>

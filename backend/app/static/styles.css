@@ -163,19 +163,7 @@ body.tb-body {
   margin-top: 0;
 }
 
-/* Highlight current section on focus */
-.tb-form-section:focus-within {
-  background: linear-gradient(
-    135deg,
-    rgba(219, 234, 254, 0.45),
-    rgba(239, 246, 255, 0.9)
-  );
-  border-radius: 1rem;
-  border-color: rgba(129, 140, 248, 0.7);
-  box-shadow: 0 10px 30px rgba(30, 64, 175, 0.22);
-  padding: 1.35rem 1rem 1.35rem 1.2rem;
-  margin: 1.25rem -0.1rem 1.1rem;
-}
+
 
 /* Rear-load UI must NOT inflate when section is focused */
 .tb-form-section:focus-within .tb-rear-load-wrapper {
@@ -245,9 +233,11 @@ body.tb-body {
 .tb-field input:focus,
 .tb-field select:focus {
   border-color: #2563eb;
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
   background-color: #ffffff;
-  transform: translateY(-0.5px);
+  transform: none;
+  box-shadow:
+    0 0 0 2px rgba(37, 99, 235, 0.35),
+    0 14px 34px rgba(30, 64, 175, 0.14);
 }
 
 .tb-helper-text {
@@ -680,4 +670,115 @@ body.tb-body {
   display: block;
   border-radius: 999px;
   transition: width 0.2s ease;
+}
+
+/* Touring mode – tidy radio options (prevents stretched labels / weird divider lines) */
+.tb-radio-group {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.tb-radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border: 0;
+  width: auto;
+}
+
+.tb-radio-option input[type="radio"] {
+  margin: 0;
+}
+
+/* =========================================================
+   FORMS (Touring + Towing): make interactions stable
+   - No card "lift" inside forms (prevents pointer slip/jump)
+   - No input "lift" on focus (removes micro-jitter)
+   - No section highlight for radio steps
+   ========================================================= */
+
+/* 1) Form cards never move on hover */
+.tb-form .tb-card:hover {
+  transform: none;
+}
+
+/* 2) Focused fields never move */
+.tb-form .tb-field input:focus,
+.tb-form .tb-field select:focus {
+  transform: none;
+}
+
+/* 3) Radio steps: no highlight at all */
+.tb-form-section:focus-within:has(input[type="radio"]:focus),
+.tb-form-section:focus-within:has(input[type="radio"]:checked) {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  border-color: transparent;
+}
+/* FORCE: input focus glow (text + select). Keeps helper text unhighlighted. */
+.tb-field input:focus,
+.tb-field select:focus {
+  outline: none !important;
+  border-color: #2563eb !important;
+  background-color: #ffffff !important;
+  transform: none !important;
+  box-shadow:
+    0 0 0 2px rgba(37, 99, 235, 0.35),
+    0 14px 34px rgba(30, 64, 175, 0.14) !important;
+}
+/* Input focus – stronger, premium (no jump, no helper highlight) */
+.tb-field input:focus,
+.tb-field select:focus {
+  outline: none;
+  border-color: #2563eb;
+  background-color: #ffffff;
+  transform: none;
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.35),
+    0 18px 40px rgba(30, 64, 175, 0.18);
+}
+
+/* =========================================================
+   Stable step highlight (towing-style)
+   Paints the highlight — NO layout changes, NO jumping.
+   ========================================================= */
+
+.tb-form-section {
+  position: relative;
+  border-radius: 1rem; /* so the overlay matches your vibe */
+}
+
+/* Default: no overlay */
+.tb-form-section::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  right: -14px;
+  top: -12px;
+  bottom: -12px;
+  border-radius: 1.1rem;
+  background: linear-gradient(
+    135deg,
+    rgba(219, 234, 254, 0.40),
+    rgba(239, 246, 255, 0.92)
+  );
+  box-shadow: 0 10px 30px rgba(30, 64, 175, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+  z-index: 0;
+}
+
+/* Show overlay when anything inside the section is focused */
+.tb-form-section:focus-within::before {
+  opacity: 1;
+}
+
+/* Keep section content above the overlay */
+.tb-form-section > * {
+  position: relative;
+  z-index: 1;
 }
