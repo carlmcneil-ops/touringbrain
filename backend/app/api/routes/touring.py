@@ -1,5 +1,9 @@
+# app/api/routes/touring.py
+
+from __future__ import annotations
+
 from datetime import date
-from math import asin, cos, radians, sin, sqrt, atan2, degrees
+from math import asin, atan2, cos, degrees, radians, sin, sqrt
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
@@ -11,31 +15,21 @@ from ...schemas.touring import (
     LocationSummary,
     RouteAlternative,
     RouteLegInfo,
+    RouteWindProfile,
     TouringPlanRequest,
     TouringPlanResponse,
 )
+from ...services.geocode import geocode_one_nz
 from ...services.weather import get_daily_weather
 
-router = APIRouter()  # main.py already prefixes /touring
+router = APIRouter()
 
 
 # ---------------------------------------------------------------------
 # Basic helpers
 # ---------------------------------------------------------------------
 
-
-def _kmh_to_knots(kmh: float) -> float:
-    return round(kmh / 1.852, 1)
-
-
 def _compute_towing_stress(wind_avg_kmh: float, wind_gust_kmh: float, rain_mm: float) -> int:
-    """
-    Towing stress score from 0–100.
-
-    - Light wind days land low (20–30)
-    - Breezier days mid-range
-    - Strong wind / gusts push toward 70–100
-    """
     score = 0.0
 
     if wind_avg_kmh > 10:
@@ -55,12 +49,8 @@ def _build_ai_summary(
     wind_gust_kmh: float,
     overnight_temp_c: float,
 ) -> str:
-    """
-    Simple rule-based summary for now.
-    """
     parts: List[str] = []
 
-    # wind
     if wind_avg_kmh >= 30 or wind_gust_kmh >= 40:
         parts.append("Windy with stretches that will feel tiring for towing.")
     elif wind_avg_kmh >= 20:
@@ -68,7 +58,6 @@ def _build_ai_summary(
     else:
         parts.append("Light winds for most of the day.")
 
-    # rain
     if rain_mm >= 8:
         parts.append("Expect proper rain at times, roads will stay wet.")
     elif rain_mm >= 2:
@@ -76,7 +65,6 @@ def _build_ai_summary(
     else:
         parts.append("Mostly dry with only light or brief showers, if any.")
 
-    # overnight temp
     if overnight_temp_c <= 2:
         parts.append("Cold overnight, you’ll want decent heating.")
     elif overnight_temp_c <= 6:
@@ -98,12 +86,9 @@ def _comfort_label(score: int) -> str:
 
 
 def _haversine_km(a: Location, b: Location) -> float:
-    """
-    Rough great-circle distance in km between two lat/lon points.
-    """
-    R = 6371.0  # km
-    lat1, lon1 = radians(a.latitude), radians(a.longitude)
-    lat2, lon2 = radians(b.latitude), radians(b.longitude)
+    R = 6371.0
+    lat1, lon1 = radians(a.latitude or 0.0), radians(a.longitude or 0.0)
+    lat2, lon2 = radians(b.latitude or 0.0), radians(b.longitude or 0.0)
 
     dlat = lat2 - lat1
     dlon = lon2 - lon1
@@ -112,30 +97,11 @@ def _haversine_km(a: Location, b: Location) -> float:
     return 2 * R * asin(sqrt(h))
 
 
-def _bearing_deg(a: Location, b: Location) -> float:
-    """
-    Bearing in degrees from point A to point B (0–360, 0 = north).
-    """
-    lat1 = radians(a.latitude)
-    lat2 = radians(b.latitude)
-    dlon = radians(b.longitude - a.longitude)
-
-    x = sin(dlon) * cos(lat2)
-    y = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dlon)
-    brng = degrees(atan2(x, y))
-    return (brng + 360.0) % 360.0
-
-
 def _estimate_drive_leg(
     from_loc: Location,
     to_loc: Location,
     max_drive_hours: Optional[float],
 ) -> RouteLegInfo:
-    """
-    Very simple drive estimate:
-    - Road distance ≈ 1.25 × straight-line distance
-    - Average speed ≈ 80 km/h for towing
-    """
     straight_km = _haversine_km(from_loc, to_loc)
     road_km = straight_km * 1.25
     drive_hours = road_km / 80.0 if road_km > 0 else 0.0
@@ -153,283 +119,176 @@ def _estimate_drive_leg(
 
 
 # ---------------------------------------------------------------------
-# Weather + daily summaries
+# Geocode + weather
 # ---------------------------------------------------------------------
+
+async def _resolve_location(loc: Location) -> Location:
+    if loc.latitude is not None and loc.longitude is not None:
+        return loc
+
+    name = (loc.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="Location name is required.")
+
+    hit = await geocode_one_nz(name)
+    if not hit:
+        raise HTTPException(status_code=404, detail=f"Could not geocode '{name}' in NZ.")
+
+    return Location(
+        name=hit.get("name") or name,
+        latitude=float(hit["latitude"]),
+        longitude=float(hit["longitude"]),
+    )
 
 
 async def _build_day_summary_for_location(loc: Location, travel_date: date) -> DaySummary:
-    """
-    Pull daily weather for a few days and pick the entry matching the travel date.
-    If there's no exact match, fall back to the first day returned.
-    """
-    try:
-        daily = await get_daily_weather(latitude=loc.latitude, longitude=loc.longitude, days=5)
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Weather service error for {loc.name}: {e}")
+    daily = await get_daily_weather(
+        latitude=loc.latitude or 0.0,
+        longitude=loc.longitude or 0.0,
+        days=5,
+    )
 
     times = daily.get("time", [])
-    rain_list = daily.get("precipitation_sum", [])
-    wind_max_list = daily.get("wind_speed_10m_max", [])
-    gust_max_list = daily.get("wind_gusts_10m_max", [])
-    temp_min_list = daily.get("temperature_2m_min", [])
-
-    n = min(len(times), len(rain_list), len(wind_max_list), len(gust_max_list), len(temp_min_list))
-    if n == 0:
-        raise HTTPException(status_code=502, detail=f"Weather service returned no daily data for {loc.name}")
+    rain = daily.get("precipitation_sum", [])
+    wind_max = daily.get("wind_speed_10m_max", [])
+    gusts = daily.get("wind_gusts_10m_max", [])
+    temp_min = daily.get("temperature_2m_min", [])
 
     idx = 0
-    for i in range(n):
-        try:
-            d = date.fromisoformat(times[i])
-        except Exception:
-            continue
-        if d == travel_date:
+    for i, t in enumerate(times):
+        if date.fromisoformat(t) == travel_date:
             idx = i
             break
 
-    day_date = date.fromisoformat(times[idx])
-    rain_mm = float(rain_list[idx])
-    wind_gust_kmh = float(gust_max_list[idx])
-    wind_max_kmh = float(wind_max_list[idx])
-    wind_avg_kmh = round(wind_max_kmh * 0.7, 1)
-    overnight_temp_c = float(temp_min_list[idx])
+    rain_mm = float(rain[idx])
+    wind_gust_kmh = float(gusts[idx])
+    wind_avg_kmh = round(float(wind_max[idx]) * 0.7, 1)
+    overnight_temp_c = float(temp_min[idx])
 
-    towing_stress = _compute_towing_stress(
-        wind_avg_kmh=wind_avg_kmh,
-        wind_gust_kmh=wind_gust_kmh,
-        rain_mm=rain_mm,
-    )
-
-    ai_summary = _build_ai_summary(
-        rain_mm=rain_mm,
-        wind_avg_kmh=wind_avg_kmh,
-        wind_gust_kmh=wind_gust_kmh,
-        overnight_temp_c=overnight_temp_c,
-    )
-
-    park_up = (wind_avg_kmh >= 30.0) or (wind_gust_kmh >= 40.0)
+    towing_stress = _compute_towing_stress(wind_avg_kmh, wind_gust_kmh, rain_mm)
 
     return DaySummary(
-        date=day_date,
+        date=travel_date,
         rain_mm=rain_mm,
         wind_avg_kmh=wind_avg_kmh,
-        wind_gust_kmh=wind_max_kmh,
+        wind_gust_kmh=wind_gust_kmh,
         towing_stress=towing_stress,
         overnight_temp_c=overnight_temp_c,
-        ai_summary=ai_summary,
-        park_up_flag=park_up,
+        ai_summary=_build_ai_summary(
+            rain_mm, wind_avg_kmh, wind_gust_kmh, overnight_temp_c
+        ),
+        park_up_flag=(wind_avg_kmh >= 30 or wind_gust_kmh >= 40),
     )
 
 
 # ---------------------------------------------------------------------
-# Comparison + recommendation
+# Route wind sampling (THIS WAS MISSING)
 # ---------------------------------------------------------------------
 
-
-def _compare_locations(from_summary: DaySummary, to_summary: DaySummary) -> Comparison:
-    if from_summary.towing_stress < to_summary.towing_stress - 5:
-        return Comparison(
-            better_for_towing="from",
-            reason="Your starting point looks calmer for towing on this day than the destination.",
-        )
-    if to_summary.towing_stress < from_summary.towing_stress - 5:
-        return Comparison(
-            better_for_towing="to",
-            reason="The destination looks calmer for towing on this day than your starting point.",
-        )
-    return Comparison(
-        better_for_towing="same",
-        reason="Towing conditions look broadly similar at both ends of the trip.",
-    )
+def _lerp(a: float, b: float, t: float) -> float:
+    return a + (b - a) * t
 
 
-def _build_recommendation(
-    route_stress: int,
-    leg: RouteLegInfo,
-) -> str:
-    drive_note = ""
-    if leg.max_drive_hours is not None:
-        if leg.within_drive_limit is False:
-            drive_note = (
-                f" On these rough numbers this leg is longer than your preferred drive "
-                f"window of about {leg.max_drive_hours:.1f} hours."
+def _make_route_samples(from_loc: Location, to_loc: Location, samples: int) -> List[Location]:
+    samples = max(3, min(21, samples))
+    out: List[Location] = []
+
+    for i in range(samples):
+        t = i / (samples - 1)
+        out.append(
+            Location(
+                name=f"Route sample {i+1}",
+                latitude=_lerp(from_loc.latitude, to_loc.latitude, t),
+                longitude=_lerp(from_loc.longitude, to_loc.longitude, t),
             )
-        elif leg.within_drive_limit is True:
-            drive_note = (
-                f" On these rough numbers the drive fits within your preferred window of "
-                f"about {leg.max_drive_hours:.1f} hours."
-            )
-
-    if route_stress >= 80:
-        base = (
-            "This is a high-stress towing day along this route – strong winds and/or "
-            "weather mean it's worth considering a different day or a shorter leg."
         )
-    elif route_stress >= 50:
-        base = (
-            "Conditions look workable but you’ll want to stay switched on – expect some "
-            "gusts and patchy weather along the way."
-        )
-    else:
-        base = (
-            "On the weather and wind alone, this looks like a decent day for towing this leg."
-        )
-
-    return base + drive_note
+    return out
 
 
-# ---------------------------------------------------------------------
-# Direction-aware alternative stops
-# ---------------------------------------------------------------------
-
-
-ALT_CANDIDATES = [
-    # Central Otago / Mackenzie / West Coast-ish circuit
-    {"name": "Cromwell", "latitude": -45.031, "longitude": 169.200},
-    {"name": "Omarama", "latitude": -44.488, "longitude": 169.971},
-    {"name": "Twizel", "latitude": -44.255, "longitude": 170.096},
-    {"name": "Haast", "latitude": -43.878, "longitude": 169.042},
-    {"name": "Geraldine", "latitude": -44.096, "longitude": 171.242},
-]
-
-
-async def _build_alternatives(
+async def _build_route_wind_profile(
     from_loc: Location,
     to_loc: Location,
     travel_date: date,
-    max_drive_hours: Optional[float],
-) -> List[RouteAlternative]:
-    """
-    Suggest a few possible park-up locations based on:
-    - real driving distance/time (rough estimate)
-    - real weather + towing stress at the alternative
-    - alignment with your general direction of travel
-    """
-    try:
-        main_bearing = _bearing_deg(from_loc, to_loc)
-    except Exception:
-        main_bearing = None
+    main_leg: RouteLegInfo,
+    samples: int = 9,
+) -> RouteWindProfile:
+    pts = _make_route_samples(from_loc, to_loc, samples)
 
-    alternatives: List[RouteAlternative] = []
+    worst_idx = 0
+    worst_day: Optional[DaySummary] = None
+    worst_score = -1
 
-    for c in ALT_CANDIDATES:
-        alt_loc = Location(
-            name=c["name"],
-            latitude=c["latitude"],
-            longitude=c["longitude"],
-        )
+    for i, loc in enumerate(pts):
+        day = await _build_day_summary_for_location(loc, travel_date)
+        if day.towing_stress > worst_score:
+            worst_score = day.towing_stress
+            worst_idx = i
+            worst_day = day
 
-        # Skip if it's exactly the same as the starting point
-        if (
-            abs(alt_loc.latitude - from_loc.latitude) < 1e-4
-            and abs(alt_loc.longitude - from_loc.longitude) < 1e-4
-        ):
-            continue
+    km_at = round(main_leg.distance_km * (worst_idx / (len(pts) - 1)), 1)
 
-        # Drive estimate from current location to the alternative
-        alt_leg = _estimate_drive_leg(from_loc, alt_loc, max_drive_hours)
-
-        # Respect the drive window if given
-        if max_drive_hours is not None and alt_leg.within_drive_limit is False:
-            continue
-
-        # Weather + towing stress at the alternative
-        alt_day = await _build_day_summary_for_location(alt_loc, travel_date)
-        alt_stress = alt_day.towing_stress
-        alt_label = _comfort_label(alt_stress)
-
-        # Direction of travel vs this alternative
-        direction_note = ""
-        if main_bearing is not None:
-            try:
-                alt_bearing = _bearing_deg(from_loc, alt_loc)
-                delta = abs(main_bearing - alt_bearing)
-                if delta > 180:
-                    delta = 360 - delta
-
-                if delta <= 45:
-                    direction_note = "Roughly along your general line of travel."
-                elif delta <= 90:
-                    direction_note = "A small detour off your main line of travel."
-                else:
-                    direction_note = "More of a side-trip compared with your current route."
-            except Exception:
-                pass
-
-        note_parts: List[str] = []
-        if direction_note:
-            note_parts.append(direction_note)
-        note_parts.append(f"Towing stress sits around {alt_stress} today ({alt_label}).")
-        note = " ".join(note_parts)
-
-        alternatives.append(
-            RouteAlternative(
-                name=alt_loc.name,
-                latitude=alt_loc.latitude,
-                longitude=alt_loc.longitude,
-                drive_hours_estimate=alt_leg.drive_hours_estimate,
-                towing_stress=alt_stress,
-                note=note,
-            )
-        )
-
-    # Prefer calmer, on-route options first
-    alternatives.sort(key=lambda a: a.towing_stress)
-
-    return alternatives
+    return RouteWindProfile(
+        samples=len(pts),
+        worst_at_km_from_start=km_at,
+        worst_wind_avg_kmh=worst_day.wind_avg_kmh if worst_day else 0.0,
+        worst_wind_gust_kmh=worst_day.wind_gust_kmh if worst_day else 0.0,
+        worst_towing_stress=worst_day.towing_stress if worst_day else 0,
+        note="Wind exposure sampled along the A→B line (not road routing).",
+    )
 
 
 # ---------------------------------------------------------------------
 # Main endpoint
 # ---------------------------------------------------------------------
 
-
 @router.post("/plan", response_model=TouringPlanResponse)
 async def touring_plan(payload: TouringPlanRequest) -> TouringPlanResponse:
-    """
-    Touring Mode – compare A → B on a given travel day, estimate drive time,
-    and give a simple towing comfort view for the route plus some alternatives.
-    """
-    from_loc: Location = payload.from_location
-    to_loc: Location = payload.to_location
-    travel_date: date = payload.travel_day_iso
+    from_loc = await _resolve_location(payload.from_location)
+    to_loc = await _resolve_location(payload.to_location)
+    travel_date = payload.travel_day_iso
 
-    # Daily summaries at each end
     from_day = await _build_day_summary_for_location(from_loc, travel_date)
     to_day = await _build_day_summary_for_location(to_loc, travel_date)
 
     from_summary = LocationSummary(location=from_loc, day=from_day)
     to_summary = LocationSummary(location=to_loc, day=to_day)
 
-    # Main leg
     main_leg = _estimate_drive_leg(from_loc, to_loc, payload.max_drive_hours)
 
-    # Route stress = worst of the two ends for now
-    route_stress = max(from_day.towing_stress, to_day.towing_stress)
-    comfort = _comfort_label(route_stress)
-
-    comparison = _compare_locations(from_day, to_day)
-    recommendation = _build_recommendation(route_stress, main_leg)
-
-    # Direction-aware alternatives
-    alternatives = await _build_alternatives(
+    route_wind_profile = await _build_route_wind_profile(
         from_loc=from_loc,
         to_loc=to_loc,
         travel_date=travel_date,
-        max_drive_hours=payload.max_drive_hours,
+        main_leg=main_leg,
+        samples=9,
     )
 
-    travel_day_human = travel_date.strftime("%A %d %B %Y")
+    route_stress = max(from_day.towing_stress, to_day.towing_stress)
+    comfort = _comfort_label(route_stress)
+
+    comparison = (
+        Comparison(better_for_towing="from", reason="Start is calmer.")
+        if from_day.towing_stress < to_day.towing_stress - 5
+        else Comparison(better_for_towing="to", reason="Destination is calmer.")
+        if to_day.towing_stress < from_day.towing_stress - 5
+        else Comparison(better_for_towing="same", reason="Conditions are similar.")
+    )
 
     return TouringPlanResponse(
         travel_day_iso=travel_date.isoformat(),
-        travel_day_human=travel_day_human,
+        travel_day_human=travel_date.strftime("%A %d %B %Y"),
         main_leg=main_leg,
         from_summary=from_summary,
         to_summary=to_summary,
         route_towing_stress=route_stress,
         comfort_label=comfort,
         comparison=comparison,
-        recommendation=recommendation,
-        alternatives=alternatives,
+        recommendation=_build_ai_summary(
+            rain_mm=max(from_day.rain_mm, to_day.rain_mm),
+            wind_avg_kmh=max(from_day.wind_avg_kmh, to_day.wind_avg_kmh),
+            wind_gust_kmh=max(from_day.wind_gust_kmh, to_day.wind_gust_kmh),
+            overnight_temp_c=min(from_day.overnight_temp_c, to_day.overnight_temp_c),
+        ),
+        route_wind_profile=route_wind_profile,
+        alternatives=[],
     )

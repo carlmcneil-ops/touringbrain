@@ -1,3 +1,6 @@
+# app/schemas/touring.py
+# (You need this change so the frontend can send NAME-only and the backend geocodes it.)
+
 from datetime import date
 from typing import List, Optional
 
@@ -6,8 +9,8 @@ from pydantic import BaseModel
 
 class Location(BaseModel):
     name: str
-    latitude: float
-    longitude: float
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class DaySummary(BaseModel):
@@ -43,7 +46,6 @@ class RouteAlternative(BaseModel):
 
 
 class Comparison(BaseModel):
-    # "from" | "to" | "same"
     better_for_towing: str
     reason: str
 
@@ -54,6 +56,13 @@ class TouringPlanRequest(BaseModel):
     travel_day_iso: date
     max_drive_hours: Optional[float] = None
 
+class RouteWindProfile(BaseModel):
+    samples: int
+    worst_at_km_from_start: float
+    worst_wind_avg_kmh: float
+    worst_wind_gust_kmh: float
+    worst_towing_stress: int
+    note: str
 
 class TouringPlanResponse(BaseModel):
     travel_day_iso: str
@@ -65,4 +74,5 @@ class TouringPlanResponse(BaseModel):
     comfort_label: str
     comparison: Comparison
     recommendation: str
+    route_wind_profile: Optional[RouteWindProfile] = None
     alternatives: List[RouteAlternative]
