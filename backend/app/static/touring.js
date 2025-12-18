@@ -60,13 +60,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const h = Math.floor(totalMinutes / 60);
     const m = totalMinutes % 60;
 
-    if (m <= 10) {
-      return `Around ${h} hour${h > 1 ? "s" : ""}`;
-    }
+    if (m === 0) {
+  return `Around ${h} hour${h > 1 ? "s" : ""}`;
+}
 
-    return `Around ${h} hour${h > 1 ? "s" : ""} ${m} minutes`;
+return `Around ${h} hour${h > 1 ? "s" : ""} ${m} minute${m !== 1 ? "s" : ""}`;
   }
 
+  function humanTravelDayLabel(choice) {
+  const c = String(choice || "").toLowerCase().trim();
+  if (c === "today") return "Today";
+  if (c === "tomorrow") return "Tomorrow";
+  if (c === "in_2_days") return "In 2 days";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(c)) return c;
+  return choice || "—";
+}
   // ---------- main renderer ----------
 
   function renderResult(data) {
@@ -325,7 +333,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderLoadingCard(origin, destination, travelDayChoice) {
     const originText = origin ? esc(origin) : "—";
     const destText = destination ? esc(destination) : "—";
-    const dayText = travelDayChoice ? esc(travelDayChoice) : "—";
+    const dayText = travelDayChoice ? esc(humanTravelDayLabel(travelDayChoice)) : "—";
 
     return `
       <div class="tb-card">
@@ -546,8 +554,13 @@ const stageTimer = setInterval(() => {
 
       const data = await res.json();
 
-      progress.stop("success");
-      resultEl.innerHTML = renderResult(data);
+     progress.stop("success");
+resultEl.innerHTML = renderResult(data);
+
+// ✅ jump user to the result (so “Your touring call” is on-screen)
+requestAnimationFrame(() => {
+  resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
+});
     } catch (err) {
       progress.stop("error");
 

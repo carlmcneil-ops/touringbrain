@@ -1,9 +1,9 @@
-# app/api/routes/touring.py
+# backend/app/api/routes/touring.py
 
 from __future__ import annotations
 
 from datetime import date
-from math import asin, atan2, cos, degrees, radians, sin, sqrt
+from math import asin, cos, radians, sin, sqrt
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
@@ -19,7 +19,8 @@ from ...schemas.touring import (
     TouringPlanRequest,
     TouringPlanResponse,
 )
-from ...services.geocode import geocode_one_nz
+from ...services.directions import get_route_km_hours
+from ...services.geocode import GeocodeError, geocode_one_nz
 from ...services.weather import get_daily_weather
 
 router = APIRouter()
@@ -86,6 +87,7 @@ def _comfort_label(score: int) -> str:
 
 
 def _haversine_km(a: Location, b: Location) -> float:
+    # Safe fallback only — not “good enough” for real drive times
     R = 6371.0
     lat1, lon1 = radians(a.latitude or 0.0), radians(a.longitude or 0.0)
     lat2, lon2 = radians(b.latitude or 0.0), radians(b.longitude or 0.0)
@@ -97,14 +99,48 @@ def _haversine_km(a: Location, b: Location) -> float:
     return 2 * R * asin(sqrt(h))
 
 
-def _estimate_drive_leg(
+async def _estimate_drive_leg(
     from_loc: Location,
     to_loc: Location,
     max_drive_hours: Optional[float],
 ) -> RouteLegInfo:
-    straight_km = _haversine_km(from_loc, to_loc)
-    road_km = straight_km * 1.25
-    drive_hours = road_km / 80.0 if road_km > 0 else 0.0
+    """
+    Primary: Mapbox Directions (real road distance + duration).
+    Fallback: simple heuristic (ONLY if Mapbox fails) + logs why.
+    """
+
+    # Don’t ever send 0,0 to Mapbox. If coords are missing, something upstream failed.
+    if from_loc.latitude is None or from_loc.longitude is None:
+        raise HTTPException(status_code=500, detail="from_loc missing lat/lon (geocode failed upstream)")
+    if to_loc.latitude is None or to_loc.longitude is None:
+        raise HTTPException(status_code=500, detail="to_loc missing lat/lon (geocode failed upstream)")
+
+    road_km: float
+    drive_hours: float
+
+    try:
+        dist_km, hours = await get_route_km_hours(
+            from_lat=float(from_loc.latitude),
+            from_lon=float(from_loc.longitude),
+            to_lat=float(to_loc.latitude),
+            to_lon=float(to_loc.longitude),
+        )
+
+        # Optional towing realism: don’t claim an average faster than 90 km/h.
+        # (This mainly protects you from “optimistic” routing times.)
+        towing_floor = dist_km / 90.0
+        hours = max(hours, towing_floor)
+
+        road_km = float(dist_km)
+        drive_hours = float(hours)
+
+    except Exception as e:
+        # Important: don’t silently regress. Log why we fell back.
+        print("⚠️ Mapbox routing failed; falling back to heuristic:", repr(e))
+
+        straight_km = _haversine_km(from_loc, to_loc)
+        road_km = straight_km * 1.25
+        drive_hours = (road_km / 80.0) if road_km > 0 else 0.0
 
     within = None
     if max_drive_hours is not None:
@@ -130,9 +166,10 @@ async def _resolve_location(loc: Location) -> Location:
     if not name:
         raise HTTPException(status_code=422, detail="Location name is required.")
 
-    hit = await geocode_one_nz(name)
-    if not hit:
-        raise HTTPException(status_code=404, detail=f"Could not geocode '{name}' in NZ.")
+    try:
+        hit = await geocode_one_nz(name)
+    except GeocodeError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
     return Location(
         name=hit.get("name") or name,
@@ -143,8 +180,8 @@ async def _resolve_location(loc: Location) -> Location:
 
 async def _build_day_summary_for_location(loc: Location, travel_date: date) -> DaySummary:
     daily = await get_daily_weather(
-        latitude=loc.latitude or 0.0,
-        longitude=loc.longitude or 0.0,
+        latitude=float(loc.latitude or 0.0),
+        longitude=float(loc.longitude or 0.0),
         days=5,
     )
 
@@ -174,15 +211,13 @@ async def _build_day_summary_for_location(loc: Location, travel_date: date) -> D
         wind_gust_kmh=wind_gust_kmh,
         towing_stress=towing_stress,
         overnight_temp_c=overnight_temp_c,
-        ai_summary=_build_ai_summary(
-            rain_mm, wind_avg_kmh, wind_gust_kmh, overnight_temp_c
-        ),
+        ai_summary=_build_ai_summary(rain_mm, wind_avg_kmh, wind_gust_kmh, overnight_temp_c),
         park_up_flag=(wind_avg_kmh >= 30 or wind_gust_kmh >= 40),
     )
 
 
 # ---------------------------------------------------------------------
-# Route wind sampling (THIS WAS MISSING)
+# Route wind sampling
 # ---------------------------------------------------------------------
 
 def _lerp(a: float, b: float, t: float) -> float:
@@ -198,8 +233,8 @@ def _make_route_samples(from_loc: Location, to_loc: Location, samples: int) -> L
         out.append(
             Location(
                 name=f"Route sample {i+1}",
-                latitude=_lerp(from_loc.latitude, to_loc.latitude, t),
-                longitude=_lerp(from_loc.longitude, to_loc.longitude, t),
+                latitude=_lerp(float(from_loc.latitude), float(to_loc.latitude), t),
+                longitude=_lerp(float(from_loc.longitude), float(to_loc.longitude), t),
             )
         )
     return out
@@ -230,9 +265,9 @@ async def _build_route_wind_profile(
     return RouteWindProfile(
         samples=len(pts),
         worst_at_km_from_start=km_at,
-        worst_wind_avg_kmh=worst_day.wind_avg_kmh if worst_day else 0.0,
-        worst_wind_gust_kmh=worst_day.wind_gust_kmh if worst_day else 0.0,
-        worst_towing_stress=worst_day.towing_stress if worst_day else 0,
+        worst_wind_avg_kmh=(worst_day.wind_avg_kmh if worst_day else 0.0),
+        worst_wind_gust_kmh=(worst_day.wind_gust_kmh if worst_day else 0.0),
+        worst_towing_stress=(worst_day.towing_stress if worst_day else 0),
         note="Wind exposure sampled along the A→B line (not road routing).",
     )
 
@@ -243,9 +278,14 @@ async def _build_route_wind_profile(
 
 @router.post("/plan", response_model=TouringPlanResponse)
 async def touring_plan(payload: TouringPlanRequest) -> TouringPlanResponse:
+    print("TOURING payload:", payload.model_dump())
+
     from_loc = await _resolve_location(payload.from_location)
     to_loc = await _resolve_location(payload.to_location)
     travel_date = payload.travel_day_iso
+
+    print("RESOLVED from_loc:", from_loc.model_dump())
+    print("RESOLVED to_loc:", to_loc.model_dump())
 
     from_day = await _build_day_summary_for_location(from_loc, travel_date)
     to_day = await _build_day_summary_for_location(to_loc, travel_date)
@@ -253,7 +293,8 @@ async def touring_plan(payload: TouringPlanRequest) -> TouringPlanResponse:
     from_summary = LocationSummary(location=from_loc, day=from_day)
     to_summary = LocationSummary(location=to_loc, day=to_day)
 
-    main_leg = _estimate_drive_leg(from_loc, to_loc, payload.max_drive_hours)
+    main_leg = await _estimate_drive_leg(from_loc, to_loc, payload.max_drive_hours)
+    print("LEG:", main_leg.model_dump())
 
     route_wind_profile = await _build_route_wind_profile(
         from_loc=from_loc,

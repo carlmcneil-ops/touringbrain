@@ -75,4 +75,4 @@ class TouringPlanResponse(BaseModel):
     comparison: Comparison
     recommendation: str
     route_wind_profile: Optional[RouteWindProfile] = None
-    alternatives: List[RouteAlternative]
+    alternatives: List[RouteAlternative] = []
